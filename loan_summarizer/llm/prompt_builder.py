@@ -38,7 +38,11 @@ INSTRUCTIONS:
 2. Generate a plain-language summary explaining the loan terms in simple words
 3. Provide a confidence score (0-100) indicating how confident you are in the extraction
 4. {language_instruction}
-5. Return ONLY valid JSON matching the schema below - no additional text or commentary
+5. Return ONLY valid JSON matching the schema below - no additional text, markdown, or commentary
+
+CRITICAL: You MUST include these two required fields in your JSON response:
+- "summary_text": A plain language summary of the loan (REQUIRED)
+- "confidence_score": A number from 0-100 (REQUIRED)
 
 FINANCIAL TERMS TO EXTRACT:
 - loan_amount: The principal amount being borrowed
@@ -61,7 +65,20 @@ JSON SCHEMA:
 LOAN CONTRACT TEXT:
 {contract_text}
 
-Remember: Respond with ONLY valid JSON. All text output (including the summary) must be in {target_language}."""
+IMPORTANT: Your response must be ONLY valid JSON with NO markdown formatting, NO code blocks, NO explanatory text.
+Example format:
+{{
+  "loan_amount": "$25,000",
+  "interest_rate": "8.5% APR",
+  "repayment_schedule": "60 monthly payments",
+  "total_cost_of_credit": "$30,750",
+  "late_fees": "$50 or 5%",
+  "default_consequences": "Legal action and credit impact",
+  "summary_text": "This is a loan for $25,000 at 8.5% interest...",
+  "confidence_score": 85
+}}
+
+All text output (including the summary) must be in {target_language}."""
 
         return prompt
     
