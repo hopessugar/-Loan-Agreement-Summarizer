@@ -3,6 +3,7 @@
 import streamlit as st
 import requests
 import json
+import os
 
 
 # Page configuration
@@ -19,10 +20,11 @@ This application uses AI to analyze loan agreements and extract key financial in
 Simply paste your loan contract text below and get an instant summary with structured data.
 """)
 
-# API endpoint configuration
+# API endpoint configuration - use environment variable or default
+DEFAULT_API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 API_URL = st.text_input(
     "Backend API URL",
-    value="http://localhost:8000",
+    value=DEFAULT_API_URL,
     help="URL of the FastAPI backend"
 )
 

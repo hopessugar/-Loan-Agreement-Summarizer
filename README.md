@@ -14,7 +14,17 @@ A production-style proof-of-concept web application that uses Large Language Mod
 ## Prerequisites
 
 - Python 3.11 or higher
-- Google Gemini API key (Get one at https://makersuite.google.com/app/apikey)
+- Hugging Face API key (Get one at https://huggingface.co/settings/tokens)
+
+## Quick Start
+
+See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for instructions on deploying to:
+- **Backend**: Render.com (free)
+- **Frontend**: Streamlit Community Cloud (free)
 
 ## Installation
 
@@ -29,27 +39,27 @@ cd loan-summarizer
 pip install -r requirements.txt
 ```
 
-3. Set up your Google Gemini API key:
+3. Set up your Hugging Face API key:
 
 **On Windows (Command Prompt):**
 ```cmd
-set GEMINI_API_KEY=your-api-key-here
+set HUGGINGFACE_API_KEY=your-api-key-here
 ```
 
 **On Windows (PowerShell):**
 ```powershell
-$env:GEMINI_API_KEY="your-api-key-here"
+$env:HUGGINGFACE_API_KEY="your-api-key-here"
 ```
 
 **On Linux/Mac:**
 ```bash
-export GEMINI_API_KEY=your-api-key-here
+export HUGGINGFACE_API_KEY=your-api-key-here
 ```
 
 **Using .env file (recommended):**
 Create a `.env` file in the project root:
 ```
-GEMINI_API_KEY=your-api-key-here
+HUGGINGFACE_API_KEY=your-api-key-here
 ```
 
 ## Usage
@@ -144,7 +154,7 @@ loan-summarizer/
 - Results display
 
 ### `llm/` Module
-- **llm_client.py**: Manages Google Gemini API communication with async operations, error handling, and retry logic
+- **llm_client.py**: Manages Hugging Face API communication with async operations, error handling, and retry logic
 - **prompt_builder.py**: Constructs prompts with JSON schema constraints and language requirements
 - **schema.py**: Defines Pydantic models for request/response validation and JSON schemas
 
@@ -195,8 +205,8 @@ Health check endpoint.
   "status": "healthy",
   "service": "Loan Summarizer API",
   "version": "0.1.0",
-  "gemini_configured": true,
-  "model": "gemini-1.5-flash"
+  "huggingface_configured": true,
+  "model": "meta-llama/Llama-3.2-3B-Instruct"
 }
 ```
 
@@ -204,8 +214,8 @@ Health check endpoint.
 
 The application can be configured through environment variables:
 
-- `GEMINI_API_KEY` (required): Your Google Gemini API key
-- `GEMINI_MODEL` (optional): Gemini model to use (default: "gemini-1.5-flash")
+- `HUGGINGFACE_API_KEY` (required): Your Hugging Face API key
+- `HUGGINGFACE_MODEL` (optional): Model to use (default: "meta-llama/Llama-3.2-3B-Instruct")
 - `API_TIMEOUT` (optional): API timeout in seconds (default: 60)
 - `MAX_TOKENS` (optional): Maximum tokens for LLM response (default: 2000)
 
@@ -214,9 +224,9 @@ The application can be configured through environment variables:
 The application provides comprehensive error handling:
 
 - **422 Unprocessable Entity**: Invalid input or validation errors
-- **401 Unauthorized**: Missing or invalid Gemini API key
+- **401 Unauthorized**: Missing or invalid Hugging Face API key
 - **429 Too Many Requests**: Rate limit exceeded
-- **503 Service Unavailable**: Gemini API connection issues
+- **503 Service Unavailable**: Hugging Face API connection issues
 - **500 Internal Server Error**: Unexpected errors
 
 ## Development
@@ -240,10 +250,11 @@ The project follows PEP 8 style guidelines. Use tools like `black` and `flake8` 
 
 ## Limitations
 
-- Requires active internet connection for Gemini API
+- Requires active internet connection for Hugging Face API
 - Processing time depends on contract length and API response time
 - Accuracy depends on contract clarity and LLM capabilities
 - Currently supports English and Hindi summaries only
+- Free tier has rate limits and cold start delays
 
 ## License
 
