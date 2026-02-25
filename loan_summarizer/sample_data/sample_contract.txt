@@ -1,0 +1,68 @@
+PERSONAL LOAN AGREEMENT
+
+This Loan Agreement ("Agreement") is entered into as of January 15, 2024, between:
+
+LENDER: First National Bank
+Address: 123 Main Street, New York, NY 10001
+
+BORROWER: John Smith
+Address: 456 Oak Avenue, Brooklyn, NY 11201
+
+WHEREAS, the Borrower has requested a loan from the Lender, and the Lender has agreed to provide such loan subject to the terms and conditions set forth herein.
+
+NOW, THEREFORE, in consideration of the mutual covenants and agreements contained herein, the parties agree as follows:
+
+1. LOAN AMOUNT
+The Lender agrees to loan to the Borrower the principal sum of TWENTY-FIVE THOUSAND DOLLARS ($25,000.00) (the "Loan Amount").
+
+2. INTEREST RATE
+The Loan shall bear interest at a fixed annual percentage rate (APR) of 8.5% per annum. Interest shall be calculated on the outstanding principal balance and shall accrue daily from the date of disbursement.
+
+3. REPAYMENT SCHEDULE
+The Borrower shall repay the Loan in sixty (60) equal monthly installments of $512.50, commencing on February 15, 2024, and continuing on the 15th day of each month thereafter until the Loan is paid in full. Each payment shall be applied first to accrued interest and then to principal.
+
+The final payment shall be due on January 15, 2029, at which time all outstanding principal and accrued interest shall be due and payable in full.
+
+4. TOTAL COST OF CREDIT
+The total amount to be repaid over the life of the Loan, including principal and interest, is THIRTY THOUSAND SEVEN HUNDRED FIFTY DOLLARS ($30,750.00). This represents a total interest charge of $5,750.00 over the 60-month term.
+
+5. PREPAYMENT
+The Borrower may prepay the Loan in whole or in part at any time without penalty. Any prepayment shall be applied first to accrued interest and then to principal.
+
+6. LATE FEES AND PENALTIES
+If any payment is not received within ten (10) days of its due date, the Borrower shall pay a late fee of FIFTY DOLLARS ($50.00) or 5% of the payment amount, whichever is greater. Late fees shall not exceed $100.00 per occurrence.
+
+In addition to late fees, interest shall continue to accrue on any unpaid balance at the rate specified in Section 2 above.
+
+7. DEFAULT AND CONSEQUENCES
+The Borrower shall be in default under this Agreement if:
+   a) The Borrower fails to make any payment when due and such failure continues for thirty (30) days;
+   b) The Borrower becomes insolvent or files for bankruptcy;
+   c) The Borrower makes any material misrepresentation in connection with this Agreement.
+
+Upon default, the Lender may, at its option:
+   - Declare the entire unpaid principal balance and all accrued interest immediately due and payable;
+   - Pursue legal action to collect the debt, including filing a lawsuit;
+   - Report the default to credit bureaus, which may negatively impact the Borrower's credit score;
+   - Engage collection agencies to recover the outstanding amount;
+   - Seek judgment and wage garnishment through court proceedings.
+
+The Borrower shall be responsible for all costs of collection, including reasonable attorney's fees and court costs.
+
+8. SECURITY
+This is an unsecured loan. No collateral is required.
+
+9. GOVERNING LAW
+This Agreement shall be governed by and construed in accordance with the laws of the State of New York.
+
+10. ENTIRE AGREEMENT
+This Agreement constitutes the entire agreement between the parties and supersedes all prior negotiations, representations, and agreements.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+LENDER:                                    BORROWER:
+First National Bank                        John Smith
+
+By: _____________________                  _____________________
+    Sarah Johnson, Loan Officer            John Smith
+    Date: January 15, 2024                 Date: January 15, 2024
