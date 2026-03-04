@@ -21,11 +21,11 @@ Simply paste your loan contract text below and get an instant summary with struc
 """)
 
 # API endpoint configuration - use environment variable or default
-DEFAULT_API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+DEFAULT_API_URL = os.getenv("BACKEND_URL", "https://loan-summarizer-api.onrender.com")
 API_URL = st.text_input(
     "Backend API URL",
     value=DEFAULT_API_URL,
-    help="URL of the FastAPI backend"
+    help="URL of the FastAPI backend (deployed or local)"
 )
 
 st.markdown("---")
@@ -79,7 +79,7 @@ if submit_button:
                 response = requests.post(
                     f"{API_URL}/summarize",
                     json=payload,
-                    timeout=120  # 2 minute timeout
+                    timeout=180  # 3 minute timeout for cold start
                 )
                 
                 # Check if request was successful

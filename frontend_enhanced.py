@@ -15,11 +15,12 @@ st.set_page_config(
 )
 
 # API endpoint configuration
-DEFAULT_API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+# Use deployed backend by default, fallback to local
+DEFAULT_API_URL = os.getenv("BACKEND_URL", "https://loan-summarizer-api.onrender.com")
 API_URL = st.sidebar.text_input(
     "Backend API URL",
     value=DEFAULT_API_URL,
-    help="URL of the FastAPI backend"
+    help="URL of the FastAPI backend (deployed or local)"
 )
 
 # Title and description
@@ -28,6 +29,20 @@ st.markdown("""
 Comprehensive AI-powered analysis of loan agreements. Extract financial data, detect hidden costs, 
 simplify clauses, generate payment timelines, and identify contradictions.
 """)
+
+# Show backend status
+with st.expander("🔌 Backend Connection Status", expanded=False):
+    try:
+        health_response = requests.get(f"{API_URL}/health", timeout=5)
+        if health_response.status_code == 200:
+            health_data = health_response.json()
+            st.success(f"✅ Connected to backend (v{health_data.get('version', 'unknown')})")
+            st.info(f"Model: {health_data.get('model', 'N/A')}")
+        else:
+            st.warning("⚠️ Backend is reachable but returned an error")
+    except:
+        st.error(f"❌ Cannot connect to backend at {API_URL}")
+        st.info("💡 The backend may be starting up (cold start) or unavailable")
 
 st.markdown("---")
 
@@ -79,12 +94,29 @@ with st.sidebar:
     analyze_button = st.button(
         "🔍 Analyze Contract",
         type="primary",
-        use_container_width=True
+        use_container_width=True,
+        help="Analyze the contract using all available features"
     )
+    
+    # Quick tips
+    with st.expander("💡 Quick Tips", expanded=False):
+        st.markdown("""
+        - **Sample Contract**: Click the button above to load a sample
+        - **Analysis Time**: First request may take 30-60 seconds (cold start)
+        - **Reading Levels**: 
+          - Loan Officer: Professional terminology
+          - Borrower: Standard language
+          - Low Literacy: Very simple language
+        - **Features**: All 5 features run automatically
+        """)
 
 # Main content area with tabs
 if contract_text and len(contract_text.strip()) > 0:
     if analyze_button:
+        # Show progress message
+        progress_placeholder = st.empty()
+        progress_placeholder.info("🚀 Starting analysis... First request may take 30-60 seconds due to cold start.")
+        
         with st.spinner("🔄 Analyzing contract... This may take a moment."):
             # Store results in session state
             st.session_state.analysis_complete = False
@@ -100,12 +132,13 @@ if contract_text and len(contract_text.strip()) > 0:
                             "contract_text": contract_text,
                             "target_language": target_language
                         },
-                        timeout=120
+                        timeout=180  # Increased timeout for cold start
                     )
                     if summary_response.status_code == 200:
                         st.session_state.summary_data = summary_response.json()
                     else:
-                        st.session_state.errors.append(f"Summarization: {summary_response.json().get('detail', 'Unknown error')}")
+                        error_detail = summary_response.json().get('detail', 'Unknown error')
+                        st.session_state.errors.append(f"Summarization: {error_detail}")
                 
                 # 2. Cost Analysis
                 with st.spinner("Analyzing hidden costs..."):
@@ -117,7 +150,8 @@ if contract_text and len(contract_text.strip()) > 0:
                     if costs_response.status_code == 200:
                         st.session_state.costs_data = costs_response.json()
                     else:
-                        st.session_state.errors.append(f"Cost Analysis: {costs_response.json().get('detail', 'Unknown error')}")
+                        error_detail = costs_response.json().get('detail', 'Unknown error')
+                        st.session_state.errors.append(f"Cost Analysis: {error_detail}")
                 
                 # 3. Timeline
                 with st.spinner("Generating payment timeline..."):
@@ -129,7 +163,8 @@ if contract_text and len(contract_text.strip()) > 0:
                     if timeline_response.status_code == 200:
                         st.session_state.timeline_data = timeline_response.json()
                     else:
-                        st.session_state.errors.append(f"Timeline: {timeline_response.json().get('detail', 'Unknown error')}")
+                        error_detail = timeline_response.json().get('detail', 'Unknown error')
+                        st.session_state.errors.append(f"Timeline: {error_detail}")
                 
                 # 4. Contradictions
                 with st.spinner("Detecting contradictions..."):
@@ -141,18 +176,25 @@ if contract_text and len(contract_text.strip()) > 0:
                     if contradictions_response.status_code == 200:
                         st.session_state.contradictions_data = contradictions_response.json()
                     else:
-                        st.session_state.errors.append(f"Contradictions: {contradictions_response.json().get('detail', 'Unknown error')}")
+                        error_detail = contradictions_response.json().get('detail', 'Unknown error')
+                        st.session_state.errors.append(f"Contradictions: {error_detail}")
                 
                 st.session_state.analysis_complete = True
                 st.session_state.reading_level = reading_level
+                progress_placeholder.success("✅ Analysis complete! View results in the tabs below.")
                 
             except requests.exceptions.ConnectionError:
+                progress_placeholder.empty()
                 st.error("❌ Could not connect to the backend API.")
                 st.warning(f"💡 Please ensure the backend is running at {API_URL}")
+                st.info("If using the deployed backend, it may be starting up (cold start takes ~30 seconds)")
             except requests.exceptions.Timeout:
+                progress_placeholder.empty()
                 st.error("❌ Request timed out.")
-                st.warning("💡 The analysis is taking longer than expected. Please try again.")
+                st.warning("💡 The analysis is taking longer than expected. This can happen on first request (cold start).")
+                st.info("Please try again - subsequent requests will be faster.")
             except Exception as e:
+                progress_placeholder.empty()
                 st.error(f"❌ An unexpected error occurred: {str(e)}")
 
 # Display results if analysis is complete
@@ -444,19 +486,45 @@ else:
     # Show instructions when no contract is entered
     st.info("👈 Please paste a loan contract in the sidebar and click 'Analyze Contract' to begin.")
     
+    # Feature showcase
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        ### 🎯 Features:
+        
+        - **📊 Summary**: Extract structured financial data and generate plain language summaries
+        - **💰 Hidden Costs**: Detect and classify all fees, calculate total cost
+        - **📝 Simplify Clauses**: Convert legal language to simple, understandable text
+        - **📅 Payment Timeline**: Visualize payment schedule and obligations
+        - **⚠️ Contradictions**: Identify inconsistencies in the contract
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### 📖 How to Use:
+        
+        1. **Load Sample** or paste your loan agreement in the sidebar
+        2. **Choose** your preferred language and reading level
+        3. **Click** "Analyze Contract" button
+        4. **Explore** the results in different tabs
+        5. **Download** results as JSON for your records
+        """)
+    
+    st.markdown("---")
+    
+    # Additional info
     st.markdown("""
-    ### Features:
+    ### ℹ️ About This Tool
     
-    - **📊 Summary**: Extract structured financial data and generate plain language summaries
-    - **💰 Hidden Costs**: Detect and classify all fees, calculate total cost
-    - **📝 Simplify Clauses**: Convert legal language to simple, understandable text
-    - **📅 Payment Timeline**: Visualize payment schedule and obligations
-    - **⚠️ Contradictions**: Identify inconsistencies in the contract
+    This AI-powered tool helps loan officers and borrowers understand complex loan agreements by:
+    - Extracting key financial information automatically
+    - Revealing hidden costs and fees that may be buried in legal language
+    - Simplifying complex clauses into plain language
+    - Creating visual timelines of payment obligations
+    - Detecting contradictions and inconsistencies
     
-    ### How to Use:
+    **Powered by**: Hugging Face LLM (meta-llama/Llama-3.2-3B-Instruct)
     
-    1. Paste your loan agreement in the sidebar
-    2. Choose your preferred language and reading level
-    3. Click "Analyze Contract"
-    4. Explore the results in different tabs
+    **Note**: First analysis may take 30-60 seconds as the backend starts up. Subsequent analyses are much faster.
     """)
