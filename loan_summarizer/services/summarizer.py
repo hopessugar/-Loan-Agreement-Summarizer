@@ -67,7 +67,8 @@ class SummarizerService:
             llm_output = await self.llm_client.generate_structured_output(
                 prompt=prompt,
                 schema=LLM_OUTPUT_SCHEMA,
-                temperature=0.1
+                temperature=0.1,
+                max_tokens=2500  # Increased to prevent truncation
             )
             
             # Step 3: Parse LLM output into StructuredLoanData

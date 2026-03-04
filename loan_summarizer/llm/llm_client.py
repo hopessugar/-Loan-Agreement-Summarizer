@@ -95,33 +95,68 @@ class LLMClient:
                     result = json.loads(content)
                 except json.JSONDecodeError as e:
                     # Try to fix common JSON issues
-                    fixed_content = content
+                    import re
                     
-                    # Try to find and extract JSON from the response
+                    # Extract JSON from the response
                     start_idx = content.find("{")
                     end_idx = content.rfind("}") + 1
                     
                     if start_idx != -1 and end_idx > start_idx:
                         fixed_content = content[start_idx:end_idx]
                         
-                        # Try to fix common issues
-                        # 1. Missing commas between fields
-                        import re
-                        # Add comma after closing quote if followed by quote without comma
+                        # Fix 1: Add comma after closing quote if followed by opening quote
                         fixed_content = re.sub(r'"\s*\n\s*"', '",\n"', fixed_content)
                         
-                        # 2. Try parsing the fixed content
+                        # Fix 2: Add comma after closing quote if followed by opening quote on same line
+                        fixed_content = re.sub(r'"\s+"', '", "', fixed_content)
+                        
+                        # Fix 3: Add comma after value if followed by new field without comma
+                        # Matches: "value" "field": or "value"\n"field":
+                        fixed_content = re.sub(r'(["\d])\s*\n?\s*("[\w_]+"\s*:)', r'\1,\n\2', fixed_content)
+                        
+                        # Fix 4: Ensure proper comma after string values before next key
+                        # Pattern: "value" followed by "key": without comma
+                        fixed_content = re.sub(r'("(?:[^"\\]|\\.)*")\s+("[\w_]+"\s*:)', r'\1, \2', fixed_content)
+                        
+                        # Try parsing the fixed content
                         try:
                             result = json.loads(fixed_content)
-                        except json.JSONDecodeError:
-                            # If still fails, raise original error with context
-                            raise ValueError(
-                                f"Failed to parse JSON response: {e}\n"
-                                f"Response: {content[:500]}"
-                            )
+                        except json.JSONDecodeError as e2:
+                            # Last attempt: try to complete truncated JSON
+                            if not fixed_content.endswith("}"):
+                                # JSON might be truncated, try to close it
+                                # Count open braces
+                                open_braces = fixed_content.count("{")
+                                close_braces = fixed_content.count("}")
+                                
+                                if open_braces > close_braces:
+                                    # Add missing closing braces
+                                    fixed_content += "}" * (open_braces - close_braces)
+                                    
+                                    try:
+                                        result = json.loads(fixed_content)
+                                    except json.JSONDecodeError:
+                                        raise ValueError(
+                                            f"Failed to parse JSON response after fixes: {e2}\n"
+                                            f"Original error: {e}\n"
+                                            f"Response: {content[:500]}"
+                                        )
+                                else:
+                                    raise ValueError(
+                                        f"Failed to parse JSON response: {e2}\n"
+                                        f"Original error: {e}\n"
+                                        f"Response: {content[:500]}"
+                                    )
+                            else:
+                                raise ValueError(
+                                    f"Failed to parse JSON response: {e2}\n"
+                                    f"Original error: {e}\n"
+                                    f"Response: {content[:500]}"
+                                )
                     else:
                         raise ValueError(
                             f"Failed to parse JSON response: {e}\n"
+                            f"No JSON object found in response\n"
                             f"Response: {content[:500]}"
                         )
                 
