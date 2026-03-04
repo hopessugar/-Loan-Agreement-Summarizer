@@ -105,10 +105,14 @@ class LLMClient:
                     
                     # Extract JSON from the response
                     start_idx = content.find("{")
-                    end_idx = content.rfind("}") + 1
+                    end_idx = content.rfind("}")
                     
-                    if start_idx != -1 and end_idx > start_idx:
-                        fixed_content = content[start_idx:end_idx]
+                    if start_idx != -1:
+                        # If no closing brace found (truncated), use entire content from start
+                        if end_idx == -1 or end_idx < start_idx:
+                            fixed_content = content[start_idx:]
+                        else:
+                            fixed_content = content[start_idx:end_idx + 1]
                         
                         # Fix 1: Add comma after closing quote if followed by opening quote (newline)
                         fixed_content = re.sub(r'"\s*\n\s*"', '",\n"', fixed_content)
@@ -143,6 +147,21 @@ class LLMClient:
                                     # Add comma to current line
                                     lines[i] = lines[i].rstrip() + ','
                         fixed_content = '\n'.join(lines)
+                        
+                        # Fix 8: Handle truncated JSON - ensure it ends properly
+                        if not fixed_content.rstrip().endswith("}"):
+                            # Count open and close braces
+                            open_braces = fixed_content.count("{")
+                            close_braces = fixed_content.count("}")
+                            
+                            # If there are unclosed braces, close them
+                            if open_braces > close_braces:
+                                # First, try to close any open string
+                                if fixed_content.count('"') % 2 != 0:
+                                    fixed_content += '"'
+                                
+                                # Then close the braces
+                                fixed_content += "}" * (open_braces - close_braces)
                         
                         # Try parsing the fixed content
                         try:
