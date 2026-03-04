@@ -57,8 +57,8 @@ async def lifespan(app: FastAPI):
 # Create FastAPI application
 app = FastAPI(
     title="Loan Summarizer API",
-    description="LLM-based loan agreement summarization and financial data extraction service",
-    version="0.1.0",
+    description="LLM-based loan agreement analysis with hidden cost detection, clause simplification, timeline generation, and contradiction detection",
+    version="0.2.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
@@ -141,12 +141,16 @@ async def root():
     """Root endpoint with API information."""
     return {
         "name": "Loan Summarizer API",
-        "version": "0.1.0",
-        "description": "LLM-based loan agreement analysis service",
+        "version": "0.2.0",
+        "description": "LLM-based loan agreement analysis service with advanced features",
         "endpoints": {
             "docs": "/docs",
             "health": "/health",
-            "summarize": "/summarize"
+            "summarize": "/summarize",
+            "analyze_costs": "/analyze/costs",
+            "simplify_clause": "/simplify/clause",
+            "analyze_timeline": "/analyze/timeline",
+            "detect_contradictions": "/detect/contradictions"
         }
     }
 
@@ -161,7 +165,7 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "Loan Summarizer API",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "huggingface_configured": settings.huggingface_api_key is not None and len(settings.huggingface_api_key) > 0,
         "model": settings.huggingface_model
     }
@@ -232,6 +236,142 @@ async def summarize_contract(request: SummarizeRequest):
             status_code=status_code,
             detail=error_message
         )
+
+
+@app.post("/analyze/costs")
+async def analyze_costs(request: ContractAnalysisRequest):
+    """
+    Analyze hidden costs in a loan agreement.
+    
+    Detects and classifies all fees, calculates total cost.
+    
+    Args:
+        request: ContractAnalysisRequest with contract_text
+        
+    Returns:
+        CostAnalysis with all detected costs and fees
+    """
+    from fastapi import HTTPException
+    from loan_summarizer.features import HiddenCostRevealer
+    from loan_summarizer.llm.schema import ContractAnalysisRequest
+    
+    try:
+        revealer = HiddenCostRevealer()
+        analysis = revealer.analyze_costs(request.contract_text)
+        return analysis
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Cost analysis failed: {str(e)}"
+        )
+
+
+@app.post("/simplify/clause")
+async def simplify_clause(request: SimplifyClauseRequest):
+    """
+    Simplify a legal clause to a specific reading level.
+    
+    Args:
+        request: SimplifyClauseRequest with clause_text and reading_level
+        
+    Returns:
+        SimplifiedClause with original and simplified versions
+    """
+    from fastapi import HTTPException
+    from loan_summarizer.features import ClauseSimplifier
+    from loan_summarizer.llm.llm_client import LLMClient
+    from loan_summarizer.llm.schema import SimplifyClauseRequest
+    
+    try:
+        llm_client = LLMClient(
+            api_key=settings.huggingface_api_key,
+            model=settings.huggingface_model
+        )
+        simplifier = ClauseSimplifier(llm_client)
+        result = await simplifier.simplify_clause(
+            request.clause_text,
+            request.reading_level
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Clause simplification failed: {str(e)}"
+        )
+
+
+@app.post("/analyze/timeline")
+async def analyze_timeline(request: ContractAnalysisRequest):
+    """
+    Generate payment timeline from loan agreement.
+    
+    Args:
+        request: ContractAnalysisRequest with contract_text
+        
+    Returns:
+        LoanTimeline with all payment events
+    """
+    from fastapi import HTTPException
+    from loan_summarizer.features import ObligationTimeline
+    from loan_summarizer.llm.schema import ContractAnalysisRequest
+    
+    try:
+        timeline_gen = ObligationTimeline()
+        timeline = timeline_gen.generate_timeline(request.contract_text)
+        return timeline
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Timeline generation failed: {str(e)}"
+        )
+
+
+@app.post("/detect/contradictions")
+async def detect_contradictions(request: ContractAnalysisRequest):
+    """
+    Detect contradictions and inconsistencies in loan agreement.
+    
+    Args:
+        request: ContractAnalysisRequest with contract_text
+        
+    Returns:
+        ContradictionReport with all detected contradictions
+    """
+    from fastapi import HTTPException
+    from loan_summarizer.features import ContradictionDetector
+    from loan_summarizer.llm.schema import ContractAnalysisRequest
+    
+    try:
+        detector = ContradictionDetector()
+        report = detector.detect_contradictions(request.contract_text)
+        return report
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Contradiction detection failed: {str(e)}"
+        )
+
+
+@app.get("/download/calendar/{contract_id}")
+async def download_calendar(contract_id: str):
+    """
+    Download payment timeline as iCalendar file.
+    
+    Args:
+        contract_id: Identifier for the contract
+        
+    Returns:
+        iCalendar file for download
+    """
+    from fastapi import HTTPException
+    from fastapi.responses import Response
+    
+    # This is a placeholder - in production, you'd retrieve the timeline from storage
+    # For now, return a simple error message
+    raise HTTPException(
+        status_code=501,
+        detail="Calendar download not yet implemented. Use /analyze/timeline endpoint and export manually."
+    )
 
 
 if __name__ == "__main__":

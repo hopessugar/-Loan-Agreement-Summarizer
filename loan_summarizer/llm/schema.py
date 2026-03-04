@@ -182,3 +182,29 @@ LLM_OUTPUT_SCHEMA = {
     "required": ["summary_text", "confidence_score"],
     "additionalProperties": False
 }
+
+
+# New request/response models for enhanced features
+
+class SimplifyClauseRequest(BaseModel):
+    """Request model for clause simplification."""
+    
+    clause_text: str = Field(
+        ...,
+        min_length=1,
+        description="The legal clause to simplify"
+    )
+    reading_level: Literal["loan_officer", "borrower", "low_literacy"] = Field(
+        default="borrower",
+        description="Target reading level"
+    )
+
+
+class ContractAnalysisRequest(BaseModel):
+    """Request model for full contract analysis."""
+    
+    contract_text: str = Field(
+        ...,
+        min_length=1,
+        description="The loan agreement text to analyze"
+    )
