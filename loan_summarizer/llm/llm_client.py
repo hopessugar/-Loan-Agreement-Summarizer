@@ -6,6 +6,12 @@ import json
 from typing import Dict, Any, Optional
 from huggingface_hub import InferenceClient
 
+try:
+    from json_repair import repair_json
+    JSON_REPAIR_AVAILABLE = True
+except ImportError:
+    JSON_REPAIR_AVAILABLE = False
+
 
 class LLMClient:
     """Client for interacting with Hugging Face Inference API with structured output support."""
@@ -104,10 +110,10 @@ class LLMClient:
                     if start_idx != -1 and end_idx > start_idx:
                         fixed_content = content[start_idx:end_idx]
                         
-                        # Fix 1: Add comma after closing quote if followed by opening quote
+                        # Fix 1: Add comma after closing quote if followed by opening quote (newline)
                         fixed_content = re.sub(r'"\s*\n\s*"', '",\n"', fixed_content)
                         
-                        # Fix 2: Add comma after closing quote if followed by opening quote on same line
+                        # Fix 2: Add comma after closing quote if followed by opening quote (same line)
                         fixed_content = re.sub(r'"\s+"', '", "', fixed_content)
                         
                         # Fix 3: Add comma after value if followed by new field without comma
@@ -118,41 +124,41 @@ class LLMClient:
                         # Pattern: "value" followed by "key": without comma
                         fixed_content = re.sub(r'("(?:[^"\\]|\\.)*")\s+("[\w_]+"\s*:)', r'\1, \2', fixed_content)
                         
+                        # Fix 5: Handle the specific case of missing comma after field value
+                        # Pattern: "field": "value" "next_field": (missing comma between value and next field)
+                        fixed_content = re.sub(r':\s*"([^"]*?)"\s+"', r': "\1", "', fixed_content)
+                        
+                        # Fix 6: Handle missing comma after field value with newline
+                        # Pattern: "field": "value"\n"next_field":
+                        fixed_content = re.sub(r':\s*"([^"]*?)"\s*\n\s*"', r': "\1",\n"', fixed_content)
+                        
+                        # Fix 7: More aggressive - find all field:value pairs and ensure commas
+                        # This catches cases where previous patterns missed
+                        # Pattern: "field": "value" followed by "next_field": without comma
+                        lines = fixed_content.split('\n')
+                        for i in range(len(lines) - 1):
+                            # If current line ends with a quoted value and next line starts with a quoted field
+                            if lines[i].strip().endswith('"') and not lines[i].strip().endswith('",'):
+                                if lines[i+1].strip().startswith('"') and ':' in lines[i+1]:
+                                    # Add comma to current line
+                                    lines[i] = lines[i].rstrip() + ','
+                        fixed_content = '\n'.join(lines)
+                        
                         # Try parsing the fixed content
                         try:
                             result = json.loads(fixed_content)
                         except json.JSONDecodeError as e2:
-                            # Last attempt: try to complete truncated JSON
-                            if not fixed_content.endswith("}"):
-                                # JSON might be truncated, try to close it
-                                # Count open braces
-                                open_braces = fixed_content.count("{")
-                                close_braces = fixed_content.count("}")
-                                
-                                if open_braces > close_braces:
-                                    # Add missing closing braces
-                                    fixed_content += "}" * (open_braces - close_braces)
-                                    
-                                    try:
-                                        result = json.loads(fixed_content)
-                                    except json.JSONDecodeError:
-                                        raise ValueError(
-                                            f"Failed to parse JSON response after fixes: {e2}\n"
-                                            f"Original error: {e}\n"
-                                            f"Response: {content[:500]}"
-                                        )
-                                else:
-                                    raise ValueError(
-                                        f"Failed to parse JSON response: {e2}\n"
-                                        f"Original error: {e}\n"
-                                        f"Response: {content[:500]}"
-                                    )
+                            # Try json-repair library as last resort
+                            if JSON_REPAIR_AVAILABLE:
+                                try:
+                                    repaired = repair_json(fixed_content)
+                                    result = json.loads(repaired)
+                                except Exception:
+                                    # json-repair also failed, try truncation handling
+                                    result = self._handle_truncated_json(fixed_content, content, e, e2)
                             else:
-                                raise ValueError(
-                                    f"Failed to parse JSON response: {e2}\n"
-                                    f"Original error: {e}\n"
-                                    f"Response: {content[:500]}"
-                                )
+                                # json-repair not available, try truncation handling
+                                result = self._handle_truncated_json(fixed_content, content, e, e2)
                     else:
                         raise ValueError(
                             f"Failed to parse JSON response: {e}\n"
@@ -224,3 +230,52 @@ class LLMClient:
         
         # Should not reach here, but just in case
         raise Exception("Failed to generate structured output after all retries")
+    
+    def _handle_truncated_json(self, fixed_content: str, original_content: str, 
+                               original_error: Exception, fixed_error: Exception) -> Dict[str, Any]:
+        """
+        Handle truncated JSON by attempting to complete it.
+        
+        Args:
+            fixed_content: The content after regex fixes
+            original_content: The original content from LLM
+            original_error: The original JSON decode error
+            fixed_error: The error after applying fixes
+            
+        Returns:
+            Parsed JSON dictionary
+            
+        Raises:
+            ValueError: If JSON cannot be repaired
+        """
+        # Last attempt: try to complete truncated JSON
+        if not fixed_content.endswith("}"):
+            # JSON might be truncated, try to close it
+            # Count open braces
+            open_braces = fixed_content.count("{")
+            close_braces = fixed_content.count("}")
+            
+            if open_braces > close_braces:
+                # Add missing closing braces
+                fixed_content += "}" * (open_braces - close_braces)
+                
+                try:
+                    return json.loads(fixed_content)
+                except json.JSONDecodeError:
+                    raise ValueError(
+                        f"Failed to parse JSON response after all fixes: {fixed_error}\n"
+                        f"Original error: {original_error}\n"
+                        f"Response: {original_content[:500]}"
+                    )
+            else:
+                raise ValueError(
+                    f"Failed to parse JSON response: {fixed_error}\n"
+                    f"Original error: {original_error}\n"
+                    f"Response: {original_content[:500]}"
+                )
+        else:
+            raise ValueError(
+                f"Failed to parse JSON response: {fixed_error}\n"
+                f"Original error: {original_error}\n"
+                f"Response: {original_content[:500]}"
+            )

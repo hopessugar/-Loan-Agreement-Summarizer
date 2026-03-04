@@ -29,3 +29,6 @@ requests>=2.32.0
 textstat>=0.7.3
 python-dateutil>=2.8.2
 plotly>=5.18.0
+
+# JSON Repair
+json-repair>=0.25.0
