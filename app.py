@@ -6,7 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic_settings import BaseSettings
 from pydantic import Field
-from loan_summarizer.llm.schema import SummarizeRequest, SummarizeResponse
+from loan_summarizer.llm.schema import (
+    SummarizeRequest, 
+    SummarizeResponse,
+    ContractAnalysisRequest,
+    SimplifyClauseRequest
+)
 
 
 class Settings(BaseSettings):
@@ -253,7 +258,6 @@ async def analyze_costs(request: ContractAnalysisRequest):
     """
     from fastapi import HTTPException
     from loan_summarizer.features import HiddenCostRevealer
-    from loan_summarizer.llm.schema import ContractAnalysisRequest
     
     try:
         revealer = HiddenCostRevealer()
@@ -280,7 +284,6 @@ async def simplify_clause(request: SimplifyClauseRequest):
     from fastapi import HTTPException
     from loan_summarizer.features import ClauseSimplifier
     from loan_summarizer.llm.llm_client import LLMClient
-    from loan_summarizer.llm.schema import SimplifyClauseRequest
     
     try:
         llm_client = LLMClient(
@@ -313,7 +316,6 @@ async def analyze_timeline(request: ContractAnalysisRequest):
     """
     from fastapi import HTTPException
     from loan_summarizer.features import ObligationTimeline
-    from loan_summarizer.llm.schema import ContractAnalysisRequest
     
     try:
         timeline_gen = ObligationTimeline()
@@ -339,7 +341,6 @@ async def detect_contradictions(request: ContractAnalysisRequest):
     """
     from fastapi import HTTPException
     from loan_summarizer.features import ContradictionDetector
-    from loan_summarizer.llm.schema import ContractAnalysisRequest
     
     try:
         detector = ContradictionDetector()

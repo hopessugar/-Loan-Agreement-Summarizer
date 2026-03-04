@@ -94,14 +94,36 @@ class LLMClient:
                 try:
                     result = json.loads(content)
                 except json.JSONDecodeError as e:
-                    # Try to find JSON in the response
+                    # Try to fix common JSON issues
+                    fixed_content = content
+                    
+                    # Try to find and extract JSON from the response
                     start_idx = content.find("{")
                     end_idx = content.rfind("}") + 1
+                    
                     if start_idx != -1 and end_idx > start_idx:
-                        json_str = content[start_idx:end_idx]
-                        result = json.loads(json_str)
+                        fixed_content = content[start_idx:end_idx]
+                        
+                        # Try to fix common issues
+                        # 1. Missing commas between fields
+                        import re
+                        # Add comma after closing quote if followed by quote without comma
+                        fixed_content = re.sub(r'"\s*\n\s*"', '",\n"', fixed_content)
+                        
+                        # 2. Try parsing the fixed content
+                        try:
+                            result = json.loads(fixed_content)
+                        except json.JSONDecodeError:
+                            # If still fails, raise original error with context
+                            raise ValueError(
+                                f"Failed to parse JSON response: {e}\n"
+                                f"Response: {content[:500]}"
+                            )
                     else:
-                        raise ValueError(f"Failed to parse JSON response: {e}\nResponse: {content[:200]}")
+                        raise ValueError(
+                            f"Failed to parse JSON response: {e}\n"
+                            f"Response: {content[:500]}"
+                        )
                 
                 return result
                 
